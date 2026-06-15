@@ -1,21 +1,21 @@
 from flask import Flask, render_template_string, request, jsonify
-import requests
 import os
+import google.generativeai as genai
 
 app = Flask(__name__)
 
-# এনভায়রনমেন্ট ভেরিয়েবল থেকে API Key নিবে (Render-এ সেট করতে হবে)
-DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY")
+# Render-এ GOOGLE_API_KEY এনভায়রনমেন্ট ভেরিয়েবল হিসেবে সেট করুন
+GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
 
-# যদি লোকাল টেস্ট করতে চান, তাহলে নিচের লাইনটি আনকমেন্ট করে API Key বসান:
-# DEEPSEEK_API_KEY = "sk-2500f77c56f94b8caf57ae3a137145cb"
+# কনফিগার করা
+genai.configure(api_key=GOOGLE_API_KEY)
 
 HTML = """<!DOCTYPE html>
 <html lang="bn">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>পাঠ-পরিচিতি বিশ্লেষক</title>
+  <title>পাঠ-পরিচিতি বিশ্লেষক - Gemini</title>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -95,9 +95,8 @@ HTML = """<!DOCTYPE html>
 <body>
 <div class="container">
   <header>
-    <div class="icon">📚</div>
-    <h1>পাঠ-পরিচিতি বিশ্লেষক</h1>
-    <p>আপনার প্রিয় বাংলা গল্প ও উপন্যাসের একটি গভীর, কৃত্রিম বুদ্ধিমত্তা-চালিত সাহিত্যিক বিশ্লেষণ।</p>
+    <h1>📚 পাঠ-পরিচিতি বিশ্লেষক (Gemini)</h1>
+    <p>আপনার প্রিয় বাংলা গল্প ও উপন্যাসের গভীর, কৃত্রিম বুদ্ধিমত্তা-চালিত সাহিত্যিক বিশ্লেষণ।</p>
   </header>
   <div class="grid">
     <div class="card">
@@ -152,9 +151,11 @@ HTML = """<!DOCTYPE html>
 </body>
 </html>"""
 
-def call_deepseek(story_name, writer_name):
-    if not DEEPSEEK_API_KEY:
-        return None, "❌ DEEPSEEK_API_KEY সেট নেই। Render-এ Environment Variable যোগ করুন।"
+def call_gemini(story_name, writer_name):
+    if not GOOGLE_API_KEY:
+        return None, "GOOGLE_API_KEY সেট নেই। Render-এ Environment Variable যোগ করুন।"
+    
+    model = genai.GenerativeModel('gemini-2.0-flash-exp')
     
     prompt = f"""তুমি একজন সাহিত্য বিশেষজ্ঞ ও বাংলা গল্পের বিশ্লেষক। নিচের গল্পটির একটি পেশাদার, বিস্তারিত ও আকর্ষণীয় 'পাঠ-পরিচিতি' বাংলায় রচনা করো। নিচের কাঠামো অনুসরণ করবে:
 
@@ -175,7 +176,9 @@ def call_deepseek(story_name, writer_name):
 ### পরিণতি (স্পয়লার না দিয়ে)
 
 ## 💡 মূল বক্তব্য ও শিক্ষা
-১. ২. ৩.
+১.
+২.
+৩.
 
 ## ✨ প্রাসঙ্গিকতা ও গুরুত্ব
 - কেন এখনও পড়ার মতো?
@@ -185,24 +188,12 @@ def call_deepseek(story_name, writer_name):
 
 গল্পের নাম: {story_name}
 লেখকের নাম: {writer_name}"""
-
-    url = "https://api.deepseek.com/v1/chat/completions"
-    headers = {
-        "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
-        "Content-Type": "application/json"
-    }
-    payload = {
-        "model": "deepseek-chat",
-        "messages": [{"role": "user", "content": prompt}],
-        "temperature": 0.7,
-        "max_tokens": 2000
-    }
+    
     try:
-        response = requests.post(url, headers=headers, json=payload, timeout=30)
-        response.raise_for_status()
-        return response.json()['choices'][0]['message']['content'], None
+        response = model.generate_content(prompt)
+        return response.text, None
     except Exception as e:
-        return None, f"❌ DeepSeek API ত্রুটি: {str(e)}"
+        return None, f"Gemini API ত্রুটি: {str(e)}"
 
 @app.route('/')
 def home():
@@ -215,7 +206,7 @@ def generate():
     writer = data.get('writer', '').strip()
     if not story or not writer:
         return jsonify({"error": "গল্পের নাম ও লেখকের নাম লিখুন"}), 400
-    result, error = call_deepseek(story, writer)
+    result, error = call_gemini(story, writer)
     if error:
         return jsonify({"error": error}), 500
     return jsonify({"result": result})
