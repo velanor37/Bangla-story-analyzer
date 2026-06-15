@@ -133,14 +133,14 @@ def call_cerebras(story_name, writer_name):
 গল্পের নাম: {story_name}
 লেখকের নাম: {writer_name}"""
 
-    # সঠিক এন্ডপয়েন্ট এবং মডেল (ডট ছাড়া)
-    url = "https://inference.cerebras.ai/v1/chat/completions"
+    # ✅ সঠিক এন্ডপয়েন্ট এবং মডেল
+    url = "https://api.cerebras.ai/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {CEREBRAS_API_KEY}",
         "Content-Type": "application/json"
     }
     payload = {
-        "model": "llama3.3-70b",   # গুরুত্বপূর্ণ: "llama-3.3-70b" না, বরং "llama3.3-70b"
+        "model": "llama-3.3-70b",   # ✅ সঠিক মডেল (ড্যাস সহ)
         "messages": [{"role": "user", "content": prompt}],
         "temperature": 0.7,
         "max_tokens": 2000
