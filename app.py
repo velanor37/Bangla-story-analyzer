@@ -155,7 +155,7 @@ def call_gemini(story_name, writer_name):
     if not GOOGLE_API_KEY:
         return None, "GOOGLE_API_KEY সেট নেই। Render-এ Environment Variable যোগ করুন।"
     
-    model = genai.GenerativeModel('gemini-2.0-flash-exp')
+    model = genai.GenerativeModel('gemini-1.5-flash')
     
     prompt = f"""তুমি একজন সাহিত্য বিশেষজ্ঞ ও বাংলা গল্পের বিশ্লেষক। নিচের গল্পটির একটি পেশাদার, বিস্তারিত ও আকর্ষণীয় 'পাঠ-পরিচিতি' বাংলায় রচনা করো। নিচের কাঠামো অনুসরণ করবে:
 
