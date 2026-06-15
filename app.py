@@ -214,3 +214,10 @@ def generate():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
     app.run(host='0.0.0.0', port=port)
+@app.route('/list-models')
+def list_models():
+    import google.generativeai as genai
+    genai.configure(api_key=GOOGLE_API_KEY)
+    models = genai.list_models()
+    model_names = [m.name for m in models if 'generateContent' in m.supported_generation_methods]
+    return jsonify({"available_models": model_names})
